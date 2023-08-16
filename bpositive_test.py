@@ -137,25 +137,25 @@ catalog.set_index("DateTime", inplace=True)
 # %% Figure 5
 
 # Recreate figure 5 but for Amatrice and Norcia
-b_positive.test_discrete_b_pos_neg_with_difference_cutoff(
-    catalog, difference_cutoff_range, delta_magnitude=0.1
-)
-b_positive.test_continuous_b_pos_neg_with_difference_cutoff(
-    catalog, difference_cutoff_range
-)
+# b_positive.test_discrete_b_pos_neg_with_difference_cutoff(
+#     catalog, difference_cutoff_range, delta_magnitude=0.1
+# )
+# b_positive.test_continuous_b_pos_neg_with_difference_cutoff(
+#     catalog, difference_cutoff_range
+# )
 
-# %% Figure 8 a,b and d
+# # %% Figure 8 a,b and d
 
-# mle is different due to constant Mc
-# b-positive is given roughly every 40 days in article, every day here.
-# Main conclustion of lack of b value drop after main shocks clearly visible
-b_positive.temporal_variation_of_b_value(
-    catalog,
-    DIFFERENCE_CUTOFF,
-    COMPLETENESS_MAGNITUDE,
-    DELTA_MAGNITUDE,
-    WINDOW_SIZE,
-)
+# # mle is different due to constant Mc
+# # b-positive is given roughly every 40 days in article, every day here.
+# # Main conclustion of lack of b value drop after main shocks clearly visible
+# b_positive.temporal_variation_of_b_value(
+#     catalog,
+#     DIFFERENCE_CUTOFF,
+#     COMPLETENESS_MAGNITUDE,
+#     DELTA_MAGNITUDE,
+#     WINDOW_SIZE,
+# )
 
 # %% Figure 9
 
@@ -193,7 +193,7 @@ print(bvalue_post_mainshock)
 foreshock_datetime = catalog[catalog["Magnitude"] == 6.2].index.values[0]
 catalog_pre_foreshock = catalog.loc[: foreshock_datetime - 1]
 pre_foreshock_b_positive = b_positive.discrete_b_positive(
-    catalog_pre_foreshock, DIFFERENCE_CUTOFF, DELTA_MAGNITUDE
+    catalog_pre_foreshock, DIFFERENCE_CUTOFF, DELTA_MAGNITUDE, bootstrap=True
 )
 print(pre_foreshock_b_positive)
 # 1.26, same as paper.
@@ -202,7 +202,7 @@ print(pre_foreshock_b_positive)
 mainshock_datetime = catalog[catalog["Magnitude"] == 6.6].index.values[0]
 catalog_post_mainshock = catalog.loc[mainshock_datetime + 1 :]
 post_mainshock_b_positive = b_positive.discrete_b_positive(
-    catalog_post_mainshock, DIFFERENCE_CUTOFF, DELTA_MAGNITUDE
+    catalog_post_mainshock, DIFFERENCE_CUTOFF, DELTA_MAGNITUDE, bootstrap=True
 )
 print(post_mainshock_b_positive)
 # 1.12, same as paper.

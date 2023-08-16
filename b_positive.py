@@ -18,6 +18,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import mle_b_value
+import scipy.stats
 
 
 def arcoth(value):
@@ -40,7 +41,9 @@ def arcoth(value):
     return 0.5 * np.log((value + 1) / (value - 1))
 
 
-def discrete_b_positive(catalog, difference_cutoff, delta_magnitude):
+def discrete_b_positive(
+    catalog, difference_cutoff, delta_magnitude, bootstrap=True
+):
     """
     Discrete b-positive Laplace mle.
 
@@ -65,15 +68,48 @@ def discrete_b_positive(catalog, difference_cutoff, delta_magnitude):
         b-positive b-value estimation of given catalog.
 
     """
-    bpositive = (
+
+    rounded_magnitudes = (
+        10
+        * delta_magnitude
+        * np.round(catalog["Magnitude"] / (10 * delta_magnitude), 1)
+        + (delta_magnitude / 2) * (delta_magnitude * 10 - 1)
+    ).copy()
+
+    bpositive = discrete_b_positive_routine(
+        rounded_magnitudes, difference_cutoff, delta_magnitude
+    )
+
+    if bootstrap:
+
+        def discrete_b_positive_routine_bootstrap(magnitudes):
+            return discrete_b_positive_routine(
+                magnitudes, difference_cutoff, delta_magnitude
+            )
+
+        res = scipy.stats.bootstrap(
+            (rounded_magnitudes,),
+            statistic=discrete_b_positive_routine_bootstrap,
+            batch=20,
+        )
+        bpositive_std = res.standard_error
+        return bpositive, bpositive_std
+    else:
+        return bpositive
+
+
+def discrete_b_positive_routine(
+    magnitudes, difference_cutoff, delta_magnitude
+):
+    return (
         (1 / (delta_magnitude / 2))
         * (
             arcoth(
                 (1 / (delta_magnitude / 2))
                 * (
                     np.mean(
-                        catalog["Magnitude"].diff()[
-                            catalog["Magnitude"].diff() >= difference_cutoff
+                        np.diff(magnitudes)[
+                            np.diff(magnitudes) >= difference_cutoff
                         ]
                     )
                     - difference_cutoff
@@ -83,10 +119,11 @@ def discrete_b_positive(catalog, difference_cutoff, delta_magnitude):
         )
         / np.log(10)
     )
-    return bpositive
 
 
-def discrete_b_negative(catalog, difference_cutoff, delta_magnitude):
+def discrete_b_negative(
+    catalog, difference_cutoff, delta_magnitude, bootstrap=True
+):
     """
     Discrete b-negative Laplace mle.
 
@@ -109,15 +146,47 @@ def discrete_b_negative(catalog, difference_cutoff, delta_magnitude):
         b-negative b-value estimation of given catalog.
 
     """
-    bnegative = (
+    rounded_magnitudes = (
+        10
+        * delta_magnitude
+        * np.round(catalog["Magnitude"] / (10 * delta_magnitude), 1)
+        + (delta_magnitude / 2) * (delta_magnitude * 10 - 1)
+    ).copy()
+
+    bnegative = discrete_b_negative_routine(
+        rounded_magnitudes, difference_cutoff, delta_magnitude
+    )
+
+    if bootstrap:
+
+        def discrete_b_negative_routine_bootstrap(magnitudes):
+            return discrete_b_negative_routine(
+                magnitudes, difference_cutoff, delta_magnitude
+            )
+
+        res = scipy.stats.bootstrap(
+            (rounded_magnitudes,),
+            statistic=discrete_b_negative_routine_bootstrap,
+            batch=30,
+        )
+        bnegative_std = res.standard_error
+        return bnegative, bnegative_std
+    else:
+        return bnegative
+
+
+def discrete_b_negative_routine(
+    magnitudes, difference_cutoff, delta_magnitude
+):
+    return (
         (1 / (delta_magnitude / 2))
         * (
             arcoth(
                 (1 / (delta_magnitude / 2))
                 * (
                     np.mean(
-                        -catalog["Magnitude"].diff()[
-                            catalog["Magnitude"].diff() <= -difference_cutoff
+                        -np.diff(magnitudes)[
+                            np.diff(magnitudes) <= -difference_cutoff
                         ]
                     )
                     - difference_cutoff
@@ -127,9 +196,9 @@ def discrete_b_negative(catalog, difference_cutoff, delta_magnitude):
         )
         / np.log(10)
     )
-    return bnegative
 
 
+# %% Continuous formulas
 def continuous_b_positive(catalog, difference_cutoff):
     """
     Continuous b-positive Laplace mle.
@@ -285,17 +354,29 @@ def test_discrete_b_pos_neg_with_difference_cutoff(
 
     """
     b_pos = []
+    b_pos_std = []
     b_neg = []
+    b_neg_std = []
+
     for difference_cutoff in difference_cutoff_range:
-        b_pos.append(
-            discrete_b_positive(catalog, difference_cutoff, delta_magnitude)
+        b_pos_tmp, b_pos_std_tmp = discrete_b_positive(
+            catalog, difference_cutoff, delta_magnitude
         )
+        b_pos.append(b_pos_tmp)
+        b_pos_std.append(b_pos_std_tmp)
+
         b_neg.append(
             discrete_b_negative(catalog, difference_cutoff, delta_magnitude)
         )
     plt.figure(figsize=(10, 3))
+
     plt.plot(difference_cutoff_range, b_pos, label="b-positive")
     plt.plot(difference_cutoff_range, b_neg, label="b-negative")
+    plt.fill_between(
+        difference_cutoff_range,
+        [b - bstd for b, bstd in zip(b_pos, b_pos_std)],
+        [b + bstd for b, bstd in zip(b_pos, b_pos_std)],
+    )
     plt.ylabel("b-value")
     plt.xlabel("Cutoff magnitude difference")
     plt.legend()
