@@ -16,9 +16,9 @@ https://doi. org/10.1029/2020JB021027
 # Import usual modules
 import numpy as np
 import seaborn as sns
+import scipy.stats
 import matplotlib.pyplot as plt
 import mle_b_value
-import scipy.stats
 
 
 def arcoth(value):
@@ -61,6 +61,8 @@ def discrete_b_positive(
         Magnitude difference cutoff.
     delta_magnitude : float
         Magnitude discretizaton step.
+    bootstrap : bool
+        Whether to estimate the standard deviation via bootstrap.
 
     Returns
     -------
@@ -94,13 +96,31 @@ def discrete_b_positive(
         )
         bpositive_std = res.standard_error
         return bpositive, bpositive_std
-    else:
-        return bpositive
+
+    return bpositive
 
 
 def discrete_b_positive_routine(
     magnitudes, difference_cutoff, delta_magnitude
 ):
+    """
+    Routine for b-positive estimates.
+
+    Parameters
+    ----------
+    magnitudes : array-like
+        Distribution of magnitudes.
+    difference_cutoff : float
+        Cutoff magnitude distribution.
+    delta_magnitude : float
+        Magnitude discretizaton step.
+
+    Returns
+    -------
+    float
+        Discrete b-positive estimation.
+
+    """
     return (
         (1 / (delta_magnitude / 2))
         * (
@@ -171,13 +191,31 @@ def discrete_b_negative(
         )
         bnegative_std = res.standard_error
         return bnegative, bnegative_std
-    else:
-        return bnegative
+
+    return bnegative
 
 
 def discrete_b_negative_routine(
     magnitudes, difference_cutoff, delta_magnitude
 ):
+    """
+    Routine for b-negative estimates.
+
+    Parameters
+    ----------
+    magnitudes : array-like
+        Distribution of magnitudes.
+    difference_cutoff : float
+        Cutoff magnitude distribution.
+    delta_magnitude : float
+        Magnitude discretizaton step.
+
+    Returns
+    -------
+    float
+        Discrete b-negative estimation.
+
+    """
     return (
         (1 / (delta_magnitude / 2))
         * (
@@ -347,6 +385,8 @@ def test_discrete_b_pos_neg_with_difference_cutoff(
         Magnitude difference cutoff list or 1D array.
     delta_magnitude : float
         Magnitude discretizaton step.
+    bootstrap : bool
+        Whether to estimate the standard deviation via bootstrap.
 
     Returns
     -------
@@ -431,6 +471,8 @@ def temporal_variation_of_b_value(
         Magnitude discretizaton step.
     window_size : int
         Number of events to consider in rolling window.
+    bootstrap : bool
+        Whether to estimate the standard deviation via bootstrap.
 
     Returns
     -------
