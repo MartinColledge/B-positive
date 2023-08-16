@@ -137,25 +137,29 @@ catalog.set_index("DateTime", inplace=True)
 # %% Figure 5
 
 # Recreate figure 5 but for Amatrice and Norcia
-# b_positive.test_discrete_b_pos_neg_with_difference_cutoff(
-#     catalog, difference_cutoff_range, delta_magnitude=0.1
-# )
-# b_positive.test_continuous_b_pos_neg_with_difference_cutoff(
-#     catalog, difference_cutoff_range
-# )
+b_positive.test_discrete_b_pos_neg_with_difference_cutoff(
+    catalog,
+    difference_cutoff_range,
+    delta_magnitude=DELTA_MAGNITUDE,
+    bootstrap=False,
+)
+b_positive.test_continuous_b_pos_neg_with_difference_cutoff(
+    catalog, difference_cutoff_range
+)
 
-# # %% Figure 8 a,b and d
+# %% Figure 8 a,b and d
 
-# # mle is different due to constant Mc
-# # b-positive is given roughly every 40 days in article, every day here.
-# # Main conclustion of lack of b value drop after main shocks clearly visible
-# b_positive.temporal_variation_of_b_value(
-#     catalog,
-#     DIFFERENCE_CUTOFF,
-#     COMPLETENESS_MAGNITUDE,
-#     DELTA_MAGNITUDE,
-#     WINDOW_SIZE,
-# )
+# mle is different due to constant Mc
+# b-positive is given roughly every 40 days in article, every day here.
+# Main conclustion of lack of b value drop after main shocks clearly visible
+b_positive.temporal_variation_of_b_value(
+    catalog,
+    DIFFERENCE_CUTOFF,
+    COMPLETENESS_MAGNITUDE,
+    DELTA_MAGNITUDE,
+    WINDOW_SIZE,
+    bootstrap=False,
+)
 
 # %% Figure 9
 

@@ -167,7 +167,7 @@ def discrete_b_negative(
         res = scipy.stats.bootstrap(
             (rounded_magnitudes,),
             statistic=discrete_b_negative_routine_bootstrap,
-            batch=30,
+            batch=20,
         )
         bnegative_std = res.standard_error
         return bnegative, bnegative_std
@@ -327,7 +327,7 @@ def test_continuous_b_pos_neg_with_difference_cutoff(
 
 
 def test_discrete_b_pos_neg_with_difference_cutoff(
-    catalog, difference_cutoff_range, delta_magnitude
+    catalog, difference_cutoff_range, delta_magnitude, bootstrap=True
 ):
     """
     Test discrete estimators in relation to magnitude difference cutoff.
@@ -359,24 +359,47 @@ def test_discrete_b_pos_neg_with_difference_cutoff(
     b_neg_std = []
 
     for difference_cutoff in difference_cutoff_range:
-        b_pos_tmp, b_pos_std_tmp = discrete_b_positive(
-            catalog, difference_cutoff, delta_magnitude
-        )
-        b_pos.append(b_pos_tmp)
-        b_pos_std.append(b_pos_std_tmp)
+        if bootstrap:
+            b_pos_tmp, b_pos_std_tmp = discrete_b_positive(
+                catalog, difference_cutoff, delta_magnitude, bootstrap
+            )
+            b_pos.append(b_pos_tmp)
+            b_pos_std.append(b_pos_std_tmp)
 
-        b_neg.append(
-            discrete_b_negative(catalog, difference_cutoff, delta_magnitude)
-        )
+            b_neg_tmp, b_neg_std_tmp = discrete_b_negative(
+                catalog, difference_cutoff, delta_magnitude, bootstrap
+            )
+
+            b_neg.append(b_neg_tmp)
+            b_neg_std.append(b_neg_std_tmp)
+        else:
+            b_pos.append(
+                discrete_b_positive(
+                    catalog, difference_cutoff, delta_magnitude, bootstrap
+                )
+            )
+            b_neg.append(
+                discrete_b_negative(
+                    catalog, difference_cutoff, delta_magnitude, bootstrap
+                )
+            )
     plt.figure(figsize=(10, 3))
 
     plt.plot(difference_cutoff_range, b_pos, label="b-positive")
     plt.plot(difference_cutoff_range, b_neg, label="b-negative")
-    plt.fill_between(
-        difference_cutoff_range,
-        [b - bstd for b, bstd in zip(b_pos, b_pos_std)],
-        [b + bstd for b, bstd in zip(b_pos, b_pos_std)],
-    )
+    if bootstrap:
+        plt.fill_between(
+            difference_cutoff_range,
+            [b - bstd for b, bstd in zip(b_pos, b_pos_std)],
+            [b + bstd for b, bstd in zip(b_pos, b_pos_std)],
+            alpha=0.4,
+        )
+        plt.fill_between(
+            difference_cutoff_range,
+            [b - bstd for b, bstd in zip(b_neg, b_neg_std)],
+            [b + bstd for b, bstd in zip(b_neg, b_neg_std)],
+            alpha=0.4,
+        )
     plt.ylabel("b-value")
     plt.xlabel("Cutoff magnitude difference")
     plt.legend()
@@ -391,6 +414,7 @@ def temporal_variation_of_b_value(
     completeness_magnitude,
     delta_magnitude,
     window_size,
+    bootstrap=False,
 ):
     """
     Temporal evolution of b-value with constant number of events.
@@ -420,7 +444,7 @@ def temporal_variation_of_b_value(
         rolling_catalog = catalog[event_number : event_number + window_size]
         b_pos.append(
             discrete_b_positive(
-                rolling_catalog, difference_cutoff, delta_magnitude
+                rolling_catalog, difference_cutoff, delta_magnitude, bootstrap
             )
         )
         b_mle.append(
