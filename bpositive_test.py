@@ -200,7 +200,7 @@ pre_foreshock_b_positive = b_positive.discrete_b_positive(
     catalog_pre_foreshock, DIFFERENCE_CUTOFF, DELTA_MAGNITUDE, bootstrap=True
 )
 print(pre_foreshock_b_positive)
-# 1.26, same as paper.
+# 1.26+-0.05, same as paper.
 
 # Figure 9 c - post mainshock
 mainshock_datetime = catalog[catalog["Magnitude"] == 6.6].index.values[0]
@@ -209,4 +209,4 @@ post_mainshock_b_positive = b_positive.discrete_b_positive(
     catalog_post_mainshock, DIFFERENCE_CUTOFF, DELTA_MAGNITUDE, bootstrap=True
 )
 print(post_mainshock_b_positive)
-# 1.12, same as paper.
+# 1.12+-0.02, same as paper.

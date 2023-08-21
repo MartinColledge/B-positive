@@ -70,27 +70,29 @@ def discrete_b_positive(
         b-positive b-value estimation of given catalog.
 
     """
-
+    # Round the magnitudes according to delta_magnitude
     rounded_magnitudes = (
         10
         * delta_magnitude
         * np.round(catalog["Magnitude"] / (10 * delta_magnitude), 1)
         + (delta_magnitude / 2) * (delta_magnitude * 10 - 1)
     ).copy()
-
+    # Get the magnitude differences
+    rounded_magnitudes_diff = rounded_magnitudes.diff()
+    # Calculate B-positive for the differences
     bpositive = discrete_b_positive_routine(
-        rounded_magnitudes, difference_cutoff, delta_magnitude
+        rounded_magnitudes_diff, difference_cutoff, delta_magnitude
     )
-
+    # If you want uncertainty estimates do some bootstrapping.
     if bootstrap:
 
-        def discrete_b_positive_routine_bootstrap(magnitudes):
+        def discrete_b_positive_routine_bootstrap(rounded_magnitudes_diff):
             return discrete_b_positive_routine(
-                magnitudes, difference_cutoff, delta_magnitude
+                rounded_magnitudes_diff, difference_cutoff, delta_magnitude
             )
 
         res = scipy.stats.bootstrap(
-            (rounded_magnitudes,),
+            (rounded_magnitudes_diff,),
             statistic=discrete_b_positive_routine_bootstrap,
             batch=20,
         )
@@ -101,15 +103,15 @@ def discrete_b_positive(
 
 
 def discrete_b_positive_routine(
-    magnitudes, difference_cutoff, delta_magnitude
+    magnitudes_diff, difference_cutoff, delta_magnitude
 ):
     """
     Routine for b-positive estimates.
 
     Parameters
     ----------
-    magnitudes : array-like
-        Distribution of magnitudes.
+    magnitudes_diff : array-like
+        Distribution of magnitudes differences.
     difference_cutoff : float
         Cutoff magnitude distribution.
     delta_magnitude : float
@@ -128,9 +130,7 @@ def discrete_b_positive_routine(
                 (1 / (delta_magnitude / 2))
                 * (
                     np.mean(
-                        np.diff(magnitudes)[
-                            np.diff(magnitudes) >= difference_cutoff
-                        ]
+                        magnitudes_diff[magnitudes_diff >= difference_cutoff]
                     )
                     - difference_cutoff
                     + (delta_magnitude / 2)
@@ -159,6 +159,8 @@ def discrete_b_negative(
         Magnitude difference cutoff.
     delta_magnitude : float
         Magnitude discretizaton step.
+    bootstrap : bool
+        Whether to estimate the standard deviation via bootstrap.
 
     Returns
     -------
@@ -166,26 +168,29 @@ def discrete_b_negative(
         b-negative b-value estimation of given catalog.
 
     """
+    # Round the magnitudes according to delta_magnitude
     rounded_magnitudes = (
         10
         * delta_magnitude
         * np.round(catalog["Magnitude"] / (10 * delta_magnitude), 1)
         + (delta_magnitude / 2) * (delta_magnitude * 10 - 1)
     ).copy()
-
+    # Get the magnitude differences
+    rounded_magnitudes_diff = rounded_magnitudes.diff()
+    # Calculate B-positive for the differences
     bnegative = discrete_b_negative_routine(
-        rounded_magnitudes, difference_cutoff, delta_magnitude
+        rounded_magnitudes_diff, difference_cutoff, delta_magnitude
     )
-
+    # If you want uncertainty estimates do some bootstrapping.
     if bootstrap:
 
-        def discrete_b_negative_routine_bootstrap(magnitudes):
+        def discrete_b_negative_routine_bootstrap(magnitudes_diff):
             return discrete_b_negative_routine(
-                magnitudes, difference_cutoff, delta_magnitude
+                magnitudes_diff, difference_cutoff, delta_magnitude
             )
 
         res = scipy.stats.bootstrap(
-            (rounded_magnitudes,),
+            (rounded_magnitudes_diff,),
             statistic=discrete_b_negative_routine_bootstrap,
             batch=20,
         )
@@ -196,15 +201,15 @@ def discrete_b_negative(
 
 
 def discrete_b_negative_routine(
-    magnitudes, difference_cutoff, delta_magnitude
+    magnitudes_diff, difference_cutoff, delta_magnitude
 ):
     """
     Routine for b-negative estimates.
 
     Parameters
     ----------
-    magnitudes : array-like
-        Distribution of magnitudes.
+    magnitudes_diff : array-like
+        Distribution of magnitudes differences.
     difference_cutoff : float
         Cutoff magnitude distribution.
     delta_magnitude : float
@@ -223,9 +228,7 @@ def discrete_b_negative_routine(
                 (1 / (delta_magnitude / 2))
                 * (
                     np.mean(
-                        -np.diff(magnitudes)[
-                            np.diff(magnitudes) <= -difference_cutoff
-                        ]
+                        -magnitudes_diff[magnitudes_diff <= -difference_cutoff]
                     )
                     - difference_cutoff
                     + (delta_magnitude / 2)
@@ -257,7 +260,8 @@ def continuous_b_positive(catalog, difference_cutoff):
         b-positive b-value estimation of given catalog.
 
     """
-    cat_diff = np.round(catalog["Magnitude"].diff(), 2)
+    magnitudes_diff = catalog["Magnitude"].diff()
+    cat_diff = np.round(magnitudes_diff, 2)
     cat_diff_positive = cat_diff[cat_diff >= np.round(difference_cutoff, 2)]
     bpositive = (
         1 / (np.mean(cat_diff_positive) - np.round(difference_cutoff, 2))
@@ -285,7 +289,9 @@ def continuous_b_negative(catalog, difference_cutoff):
         b_negative b-value estimation of given catalog.
 
     """
-    cat_diff = np.round(catalog["Magnitude"].diff(), 2)
+    magnitudes_diff = catalog["Magnitude"].diff()
+
+    cat_diff = np.round(magnitudes_diff, 2)
     cat_diff_negative = -cat_diff[cat_diff <= -np.round(difference_cutoff, 2)]
     bnegative = (
         1
@@ -505,10 +511,15 @@ def temporal_variation_of_b_value(
     plt.ylabel("b-value")
     plt.xlim(0, len(catalog))
     plt.ylim(0, 2)
-
     plt.grid()
 
     ax2 = plt.subplot(3, 1, 2)
+    ax2.plot(
+        np.arange(len(catalog) - window_size),
+        b_mle,
+        label="Aki-Utsu mle",
+        c="lightgrey",
+    )
     ax2.plot(
         np.arange(len(catalog) - window_size), b_pos, label="b-positive", c="r"
     )
